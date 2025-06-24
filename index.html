@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naxxivo - Tic Tac Toe HD</title>
+    <!-- Tailwind CSS CDN (for some utility classes) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 'Roboto' for modern feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5; /* Light grey background */
+            color: #333333; /* Dark text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            overflow: hidden;
+        }
+        .game-container {
+            background-color: #ffffff; /* White container */
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            padding: 2rem;
+            width: 100%;
+            max-width: 450px; /* Standard game width */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #4a4a4a; /* Darker grey for title */
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            background-color: #ffffff; /* White background for board */
+            border-radius: 8px;
+            border: 2px solid #cccccc; /* Light grey border */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            touch-action: manipulation;
+            cursor: pointer;
+            width: 100%; /* Fluid width */
+            height: auto; /* Maintain aspect ratio */
+            max-width: 350px; /* Max size for canvas itself */
+            max-height: 350px; /* Make it square */
+            aspect-ratio: 1 / 1; /* Ensure it's square */
+        }
+
+        .game-status-board {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+            color: #555555;
+        }
+        .player-score {
+            background-color: #f0f0f0; /* Lighter grey for score boxes */
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .score-label {
+            font-weight: 500;
+            color: #777777;
+        }
+        .score-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333333;
+            transition: transform 0.1s ease-out; /* For score bump animation */
+        }
+        .score-value.score-bump {
+            transform: scale(1.1); /* Pop effect */
+        }
+        .current-player-display {
+            background-color: #e6f7ff; /* Light blue */
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #007bb6; /* Dark blue text */
+            border: 1px solid #b3e0ff;
+            box-shadow: 0 0 8px rgba(0, 123, 198, 0.2);
+        }
+
+        .game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.8rem;
+            width: 100%;
+            margin-top: 2rem;
+        }
+        .game-controls button {
+            background-color: #6366f1; /* Purple button */
+            color: #ffffff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 3px 8px rgba(99, 102, 241, 0.2);
+            flex-grow: 1;
+            min-width: 140px;
+        }
+        .game-controls button:hover {
+            background-color: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(99, 102, 241, 0.3);
+        }
+        .game-controls button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.1);
+        }
+        .game-controls button#resetScoresBtn {
+            background-color: #ef4444; /* Red for reset */
+        }
+        .game-controls button#resetScoresBtn:hover {
+            background-color: #dc2626;
+        }
+        /* Style for active game mode button */
+        .game-controls button.active-mode {
+            background-color: #2ecc71; /* Green for active mode */
+            box-shadow: 0 3px 8px rgba(46, 204, 113, 0.4);
+        }
+        .game-controls button.active-mode:hover {
+            background-color: #27ae60;
+        }
+
+
+        .message-box {
+            background-color: #e6f7ff;
+            color: #007bb6;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 500;
+            border: 1px solid #b3e0ff;
+            box-shadow: 0 0 8px rgba(0, 123, 198, 0.2);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            animation: fadeIn 0.4s ease-out;
+            display: none;
+            max-width: 80%;
+        }
+        .message-box.win {
+            background-color: #e6ffe6;
+            border-color: #81c784;
+            color: #2e7d32;
+        }
+        .message-box.draw {
+            background-color: #fffacd;
+            border-color: #f0c500;
+            color: #927503;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Styles for the ad button inside message box */
+        .message-box .ad-button {
+            background: linear-gradient(45deg, #f06, #f90); /* Pink-orange gradient */
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.8rem;
+            box-shadow: 0 2px 8px rgba(255, 0, 102, 0.3);
+        }
+        .message-box .ad-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(255, 0, 102, 0.4);
+        }
+
+        /* Canvas drawing styles */
+        .line-x {
+            stroke: #007bff; /* Blue for X */
+        }
+        .line-o {
+            stroke: #ff5722; /* Orange for O */
+        }
+        .winning-line {
+            stroke: #4CAF50; /* Green for winning line */
+            filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.7)); /* Subtle glow */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Naxxivo Tic Tac Toe</h1>
+
+        <div class="game-status-board">
+            <div class="player-score">
+                <div class="score-label">PLAYER X</div>
+                <span id="playerXScore" class="score-value">0</span>
+            </div>
+            <div class="current-player-display" id="currentPlayerDisplay">PLAYER X's TURN</div>
+            <div class="player-score">
+                <div class="score-label">PLAYER O</div>
+                <span id="playerOScore" class="score-value">0</span>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="game-controls">
+            <button id="twoPlayerModeBtn" class="active-mode">2-Player Mode</button>
+            <button id="vsAIModeBtn">Vs. AI Mode</button>
+            <button id="newGameBtn">Start New Game</button>
+            <button id="resetScoresBtn">Reset Scores</button>
+        </div>
+
+        <div id="gameMessageBox" class="message-box">
+            <!-- Game messages will appear here -->
+        </div>
+    </div>
+
+    <script>
+        // --- Game Variables ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const playerXScoreDisplay = document.getElementById('playerXScore');
+        const playerOScoreDisplay = document.getElementById('playerOScore');
+        const currentPlayerDisplay = document.getElementById('currentPlayerDisplay');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const resetScoresBtn = document.getElementById('resetScoresBtn');
+        const twoPlayerModeBtn = document.getElementById('twoPlayerModeBtn');
+        const vsAIModeBtn = document.getElementById('vsAIModeBtn');
+        const gameMessageBox = document.getElementById('gameMessageBox');
+
+        // Game state
+        let board = ['', '', '', '', '', '', '', '', '']; // Represents 3x3 board
+        const WINNING_COMBINATIONS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        let currentPlayer = 'X';
+        let gameActive = false; // True when game is in progress
+        let gameOver = false; // True when game has ended (win or draw)
+        let playerXScore = localStorage.getItem('ticTacToeXScore') ? parseInt(localStorage.getItem('ticTacToeXScore')) : 0;
+        let playerOScore = localStorage.getItem('ticTacToeOScore') ? parseInt(localStorage.getItem('ticTacToeOScore')) : 0;
+        let animationFrameId = null; // For drawing animation
+
+        // Game Mode Variable: '2player' or 'vsAI'
+        let gameMode = '2player'; 
+        const AILogicDelay = 700; // Delay for AI move in milliseconds
+        let aiIsThinking = false; // Flag to prevent player clicks during AI turn
+
+        // --- Drawing Variables (HD) ---
+        const renderResolution = 600; // Internal rendering resolution (e.g., 600x600 for square board)
+        const cellCount = 3;
+        let cellSize; // Calculated based on renderResolution
+        let lineWidth; // Line width for grid
+        let markSize; // Size of X/O mark
+        let markLineWidth; // Line width for X/O mark
+
+        // --- Visual Effects Variables ---
+        let particles = [];
+        const maxParticles = 100; // More particles
+        const particleSpeedFactor = 0.5; // Controls particle movement speed
+        const particleRadiusRange = { min: 1, max: 4 };
+
+        // --- Ad URLs ---
+        const adUrls = [
+            "https://www.profitableratecpm.com/behfaukx?key=e06b4978e6717c66764a4c198fd4624a",
+            "https://www.profitableratecpm.com/t9nuenmt4?key=0b825e0f3d9613e979b9cf67f3ff7341",
+            "https://www.profitableratecpm.com/ksieyp4xx?key=e7e39969c466de8a68bcc3badbf5a42f",
+            "https://www.profitableratecpm.com/hbxeum1x?key=53dacefc81dcca0177fddbc02b63680c"
+        ];
+        let currentAdIndex = 0; // To cycle through ad URLs
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a message in the game message box.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'win', 'draw', or '' (for default/info).
+         * @param {boolean} showAdButton - True to show the ad support button.
+         */
+        function showGameMessage(message, type = '', showAdButton = false) {
+            gameMessageBox.innerHTML = `<p>${message}</p>`; // Use innerHTML to allow for a button
+            gameMessageBox.classList.remove('win', 'draw');
+            if (type) {
+                gameMessageBox.classList.add(type);
+            }
+            if (showAdButton) {
+                const adButton = document.createElement('button');
+                adButton.textContent = "Support Naxxivo";
+                adButton.className = "ad-button"; // Add a class for styling
+                adButton.onclick = () => {
+                    // Open the current ad URL in a new tab
+                    window.open(adUrls[currentAdIndex], '_blank');
+                    // Cycle to the next ad URL
+                    currentAdIndex = (currentAdIndex + 1) % adUrls.length;
+                };
+                gameMessageBox.appendChild(adButton);
+            }
+            gameMessageBox.style.display = 'block';
+        }
+
+        /**
+         * Hides the game message box.
+         */
+        function hideGameMessage() {
+            gameMessageBox.style.display = 'none';
+        }
+
+        /**
+         * Resizes the canvas and adjusts all drawing parameters for HD rendering.
+         */
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            // Determine the maximum square size that fits within the container
+            const size = Math.min(container.clientWidth, container.clientHeight) * 0.95; 
+
+            // Set canvas internal resolution for HD rendering
+            canvas.width = renderResolution;
+            canvas.height = renderResolution;
+
+            // Set CSS width and height to scale the canvas to fit the display area
+            canvas.style.width = `${size}px`;
+            canvas.style.height = `${size}px`;
+
+            // Calculate cell size and line widths based on the internal rendering resolution
+            cellSize = canvas.width / cellCount;
+            lineWidth = canvas.width * 0.008; // Lines are 0.8% of canvas width (thinner)
+            markSize = cellSize * 0.6; // Mark size is 60% of cell
+            markLineWidth = canvas.width * 0.012; // Mark line width is 1.2% of canvas width (thinner)
+        }
+
+        /**
+         * Draws the Tic Tac Toe grid.
+         */
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas first
+            ctx.strokeStyle = '#cccccc'; /* Light grey lines for a clean look */
+            ctx.lineWidth = lineWidth;
+
+            // Vertical lines
+            ctx.beginPath();
+            ctx.moveTo(cellSize, 0);
+            ctx.lineTo(cellSize, canvas.height);
+            ctx.moveTo(cellSize * 2, 0);
+            ctx.lineTo(cellSize * 2, canvas.height);
+            ctx.stroke();
+
+            // Horizontal lines
+            ctx.beginPath();
+            ctx.moveTo(0, cellSize);
+            ctx.lineTo(canvas.width, cellSize);
+            ctx.moveTo(0, cellSize * 2);
+            ctx.lineTo(canvas.width, cellSize * 2);
+            ctx.stroke();
+        }
+
+        /**
+         * Draws particles on the canvas and updates their positions.
+         */
+        function drawParticles() {
+            // Adjust fillStyle for transparency and color to match UI background a bit
+            ctx.fillStyle = 'rgba(150, 150, 150, 0.3)'; // Slightly darker, more subtle particles
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                p.x -= p.speed * particleSpeedFactor; // Use particleSpeedFactor
+                if (p.x < -p.radius) {
+                    p.x = canvas.width + p.radius;
+                    p.y = Math.random() * canvas.height;
+                    p.radius = Math.random() * (particleRadiusRange.max - particleRadiusRange.min) + particleRadiusRange.min;
+                    p.speed = Math.random() * 0.5 + 0.1;
+                }
+            }
+        }
+
+
+        /**
+         * Draws an X mark with animation.
+         * @param {number} col - Cell column (0-2).
+         * @param {number} row - Cell row (0-2).
+         */
+        function drawX(col, row) {
+            ctx.strokeStyle = '#007bff'; /* Blue for X */
+            ctx.lineWidth = markLineWidth;
+            ctx.lineCap = 'round';
+            const padding = (cellSize - markSize) / 2;
+            const startX1 = col * cellSize + padding;
+            const startY1 = row * cellSize + padding;
+            const endX1 = col * cellSize + cellSize - padding;
+            const endY1 = row * cellSize + cellSize - padding;
+
+            const startX2 = col * cellSize + cellSize - padding;
+            const startY2 = row * cellSize + padding;
+            const endX2 = col * cellSize + padding;
+            const endY2 = row * cellSize + cellSize - padding;
+
+            function animateX(progress) {
+                drawGrid();
+                drawParticles(); // Draw particles underneath
+                drawBoardMarksExcept(col, row);
+
+                ctx.strokeStyle = '#007bff';
+                ctx.lineWidth = markLineWidth;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0, 123, 255, 0.7)';
+
+                ctx.beginPath();
+                ctx.moveTo(startX1, startY1);
+                ctx.lineTo(startX1 + (endX1 - startX1) * progress, startY1 + (endY1 - startY1) * progress);
+                ctx.stroke();
+
+                if (progress > 0.5) {
+                    ctx.beginPath();
+                    ctx.moveTo(startX2, startY2);
+                    ctx.lineTo(startX2 + (endX2 - startX2) * (progress - 0.5) * 2, startY2 + (endY2 - startY2) * (progress - 0.5) * 2);
+                    ctx.stroke();
+                }
+                
+                ctx.shadowBlur = 0;
+
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(() => animateX(progress + 0.06));
+                } else {
+                    drawGrid();
+                    drawParticles(); // Redraw particles after animation too
+                    drawBoardMarks();
+                }
+            }
+            animationFrameId = requestAnimationFrame(() => animateX(0));
+        }
+
+        /**
+         * Draws an O mark with animation.
+         * @param {number} col - Cell column (0-2).
+         * @param {number} row - Cell row (0-2).
+         */
+        function drawO(col, row) {
+            ctx.strokeStyle = '#ff5722'; /* Orange for O */
+            ctx.lineWidth = markLineWidth;
+            ctx.lineCap = 'round';
+            const centerX = col * cellSize + cellSize / 2;
+            const centerY = row * cellSize + cellSize / 2;
+            const radius = markSize / 2;
+
+            function animateO(progress) {
+                drawGrid();
+                drawParticles(); // Draw particles underneath
+                drawBoardMarksExcept(col, row);
+
+                ctx.strokeStyle = '#ff5722';
+                ctx.lineWidth = markLineWidth;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(255, 87, 34, 0.7)';
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, -Math.PI / 2, Math.PI * 2 * progress - Math.PI / 2);
+                ctx.stroke();
+                
+                ctx.shadowBlur = 0;
+
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(() => animateO(progress + 0.06));
+                } else {
+                    drawGrid();
+                    drawParticles(); // Redraw particles after animation too
+                    drawBoardMarks();
+                }
+            }
+            animationFrameId = requestAnimationFrame(() => animateO(0));
+        }
+
+        /**
+         * Draws all marks currently on the board without animation.
+         * Used for full board redraws to ensure correct state.
+         */
+        function drawBoardMarks() {
+            board.forEach((mark, index) => {
+                const col = index % cellCount;
+                const row = Math.floor(index / cellCount);
+                const padding = (cellSize - markSize) / 2;
+                const centerX = col * cellSize + cellSize / 2;
+                const centerY = row * cellSize + cellSize / 2;
+                const radius = markSize / 2;
+
+                if (mark === 'X') {
+                    ctx.strokeStyle = '#007bff';
+                    ctx.lineWidth = markLineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(col * cellSize + padding, row * cellSize + padding);
+                    ctx.lineTo(col * cellSize + cellSize - padding, row * cellSize + cellSize - padding);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(col * cellSize + cellSize - padding, row * cellSize + padding);
+                    ctx.lineTo(col * cellSize + padding, row * cellSize + cellSize - padding);
+                    ctx.stroke();
+                } else if (mark === 'O') {
+                    ctx.strokeStyle = '#ff5722';
+                    ctx.lineWidth = markLineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        /**
+         * Draws all marks on the board except the one at a specific column and row.
+         * Used for animating a single mark without redrawing itself.
+         * @param {number} excludeCol - Column of the mark to exclude.
+         * @param {number} excludeRow - Row of the mark to exclude.
+         */
+        function drawBoardMarksExcept(excludeCol, excludeRow) {
+            board.forEach((mark, index) => {
+                const col = index % cellCount;
+                const row = Math.floor(index / cellCount);
+                if (col === excludeCol && row === excludeRow) return;
+
+                const padding = (cellSize - markSize) / 2;
+                const centerX = col * cellSize + cellSize / 2;
+                const centerY = row * cellSize + cellSize / 2;
+                const radius = markSize / 2;
+
+                if (mark === 'X') {
+                    ctx.strokeStyle = '#007bff';
+                    ctx.lineWidth = markLineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(col * cellSize + padding, row * cellSize + padding);
+                    ctx.lineTo(col * cellSize + cellSize - padding, row * cellSize + cellSize - padding);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(col * cellSize + cellSize - padding, row * cellSize + padding);
+                    ctx.lineTo(col * cellSize + padding, row * cellSize + cellSize - padding);
+                    ctx.stroke();
+                } else if (mark === 'O') {
+                    ctx.strokeStyle = '#ff5722';
+                    ctx.lineWidth = markLineWidth;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+
+        /**
+         * Draws the winning line animation.
+         * @param {Array<number>} combo - The winning combination indices.
+         * @param {string} winnerMark - 'X' or 'O' to determine line color.
+         */
+        function drawWinningLine(combo, winnerMark) {
+            const startCol = combo[0] % cellCount;
+            const startRow = Math.floor(combo[0] / cellCount);
+            const endCol = combo[2] % cellCount;
+            const endRow = Math.floor(combo[2] / cellCount);
+
+            const startX = startCol * cellSize + cellSize / 2;
+            const startY = startRow * cellSize + cellSize / 2;
+            const endX = endCol * cellSize + cellSize / 2;
+            const endY = endRow * cellSize + cellSize / 2;
+
+            const lineColor = (winnerMark === 'X') ? '#007bff' : '#ff5722'; // Match winner's color
+            const glowColor = (winnerMark === 'X') ? 'rgba(0, 123, 255, 0.8)' : 'rgba(255, 87, 34, 0.8)';
+
+
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = markLineWidth * 1.5;
+            ctx.lineCap = 'round';
+            
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = glowColor;
+
+            function animateLine(progress) {
+                drawGrid();
+                drawParticles(); // Redraw particles
+                drawBoardMarks();
+                
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = markLineWidth * 1.5;
+                ctx.lineCap = 'round';
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = glowColor;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(startX + (endX - startX) * progress, startY + (endY - startY) * progress);
+                ctx.stroke();
+
+                ctx.shadowBlur = 0; // Reset shadow
+
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(() => animateLine(progress + 0.03));
+                } else {
+                    drawGrid();
+                    drawParticles(); // Redraw particles
+                    drawBoardMarks();
+                    ctx.strokeStyle = lineColor;
+                    ctx.lineWidth = markLineWidth * 1.5;
+                    ctx.lineCap = 'round';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = glowColor;
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+            }
+            animationFrameId = requestAnimationFrame(() => animateLine(0));
+        }
+
+        // --- Game Logic ---
+
+        /**
+         * Handles a click on the canvas.
+         * @param {MouseEvent} event - The click event.
+         */
+        function handleClick(event) {
+            if (!gameActive || gameOver || (gameMode === 'vsAI' && currentPlayer === 'O') || aiIsThinking) return; // Disable clicks during AI turn
+
+            const rect = canvas.getBoundingClientRect(); // Get canvas position and size
+            const scaleX = canvas.width / rect.width;    // Relationship bitmap vs. element for X
+            const scaleY = canvas.height / rect.height;  // Relationship bitmap vs. element for Y
+
+            const clientX = event.clientX || event.touches[0].clientX;
+            const clientY = event.clientY || event.touches[0].clientY;
+
+            const x = (clientX - rect.left) * scaleX; // Scale X coordinate
+            const y = (clientY - rect.top) * scaleY;  // Scale Y coordinate
+
+            const col = Math.floor(x / cellSize);
+            const row = Math.floor(y / cellSize);
+            const index = row * cellCount + col;
+
+            if (board[index] === '') {
+                makeMove(index, currentPlayer);
+            }
+        }
+
+        /**
+         * Makes a move on the board and handles game state.
+         * @param {number} index - The index of the cell to play.
+         * @param {string} playerMark - The mark ('X' or 'O').
+         */
+        function makeMove(index, playerMark) {
+            board[index] = playerMark;
+            if (playerMark === 'X') {
+                drawX(index % cellCount, Math.floor(index / cellCount));
+            } else {
+                drawO(index % cellCount, Math.floor(index / cellCount));
+            }
+
+            if (checkWin()) {
+                showGameMessage(`PLAYER ${playerMark} WINS!`, 'win', true); // Show ad button on win
+                if (playerMark === 'X') {
+                    playerXScore++;
+                    localStorage.setItem('ticTacToeXScore', playerXScore);
+                } else {
+                    playerOScore++;
+                    localStorage.setItem('ticTacToeOScore', playerOScore);
+                }
+                updateScoresDisplay(playerMark); // Pass player mark for score animation
+                gameOver = true;
+                gameActive = false;
+                setTimeout(() => {
+                    const winCombo = getWinningCombination();
+                    if (winCombo) drawWinningLine(winCombo, playerMark);
+                }, 500);
+            } else if (checkDraw()) {
+                showGameMessage('IT\'S A DRAW!', 'draw', true); // Show ad button on draw
+                gameOver = true;
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                currentPlayerDisplay.textContent = `${(gameMode === 'vsAI' && currentPlayer === 'O') ? 'AI' : 'PLAYER ' + currentPlayer}'s TURN`;
+                
+                if (gameMode === 'vsAI' && currentPlayer === 'O' && !gameOver) {
+                    aiIsThinking = true; // Set AI thinking flag
+                    canvas.style.cursor = 'not-allowed'; // Change cursor during AI turn
+                    setTimeout(() => {
+                        aiMove();
+                        aiIsThinking = false; // Reset AI thinking flag
+                        if (!gameOver) canvas.style.cursor = 'pointer'; // Restore cursor if game not over
+                    }, AILogicDelay);
+                } else {
+                    canvas.style.cursor = 'pointer'; // Restore cursor for human player
+                }
+            }
+        }
+
+        /**
+         * AI's move logic (for 'O' player).
+         */
+        function aiMove() {
+            let availableSpots = board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+
+            // 1. Check for AI winning move
+            for (let i = 0; i < availableSpots.length; i++) {
+                let testBoard = [...board];
+                testBoard[availableSpots[i]] = 'O';
+                if (checkWinForPlayer(testBoard, 'O')) {
+                    makeMove(availableSpots[i], 'O');
+                    return;
+                }
+            }
+
+            // 2. Check to block player's winning move
+            for (let i = 0; i < availableSpots.length; i++) {
+                let testBoard = [...board];
+                testBoard[availableSpots[i]] = 'X';
+                if (checkWinForPlayer(testBoard, 'X')) {
+                    makeMove(availableSpots[i], 'O');
+                    return;
+                }
+            }
+
+            // 3. Take the center
+            if (board[4] === '') {
+                makeMove(4, 'O');
+                return;
+            }
+
+            // 4. Take a corner
+            const corners = [0, 2, 6, 8];
+            let availableCorners = corners.filter(index => board[index] === '');
+            if (availableCorners.length > 0) {
+                makeMove(availableCorners[Math.floor(Math.random() * availableCorners.length)], 'O');
+                return;
+            }
+
+            // 5. Take a side
+            const sides = [1, 3, 5, 7];
+            let availableSides = sides.filter(index => board[index] === '');
+            if (availableSides.length > 0) {
+                makeMove(availableSides[Math.floor(Math.random() * availableSides.length)], 'O');
+                return;
+            }
+            
+            // Fallback (should not be reached in Tic Tac Toe with these rules if game active)
+            if (availableSpots.length > 0) {
+                makeMove(availableSpots[Math.floor(Math.random() * availableSpots.length)], 'O');
+            }
+        }
+
+        /**
+         * Helper function to check win for a specific player on a given board state.
+         * @param {Array<string>} currentBoard - The board array.
+         * @param {string} player - The player mark to check ('X' or 'O').
+         * @returns {boolean} - True if player wins, false otherwise.
+         */
+        function checkWinForPlayer(currentBoard, player) {
+            return WINNING_COMBINATIONS.some(combo => {
+                return combo.every(index => {
+                    return currentBoard[index] === player;
+                });
+            });
+        }
+
+        /**
+         * Checks if the current game player has won.
+         * @returns {boolean} - True if current player wins, false otherwise.
+         */
+        function checkWin() {
+            return WINNING_COMBINATIONS.some(combo => {
+                return combo.every(index => {
+                    return board[index] === currentPlayer;
+                });
+            });
+        }
+
+        /**
+         * Gets the winning combination of cells.
+         * @returns {Array<number> | null} - The winning combination or null if no win.
+         */
+        function getWinningCombination() {
+            for (const combo of WINNING_COMBINATIONS) {
+                if (combo.every(index => board[index] === currentPlayer)) {
+                    return combo;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Checks if the game is a draw.
+         * @returns {boolean} - True if draw, false otherwise.
+         */
+        function checkDraw() {
+            return board.every(cell => cell !== '');
+        }
+
+        /**
+         * Updates the score displays in HTML with animation.
+         * @param {string} winnerMark - The mark of the player who scored.
+         */
+        function updateScoresDisplay(winnerMark) {
+            playerXScoreDisplay.textContent = playerXScore;
+            playerOScoreDisplay.textContent = playerOScore;
+
+            // Add animation class
+            if (winnerMark === 'X') {
+                playerXScoreDisplay.classList.add('score-bump');
+                setTimeout(() => playerXScoreDisplay.classList.remove('score-bump'), 300);
+            } else if (winnerMark === 'O') {
+                playerOScoreDisplay.classList.add('score-bump');
+                setTimeout(() => playerOScoreDisplay.classList.remove('score-bump'), 300);
+            }
+        }
+
+        /**
+         * Starts a new game (resets board, current player, hides message).
+         */
+        function startNewGame() {
+            board.fill(''); // Clear board
+            currentPlayer = 'X'; // X always starts
+            gameActive = true;
+            gameOver = false;
+            aiIsThinking = false; // Reset AI thinking flag
+            currentPlayerDisplay.textContent = `PLAYER ${currentPlayer}'s TURN`;
+            hideGameMessage();
+            drawGrid(); // Redraw empty grid
+            canvas.style.pointerEvents = 'auto'; // Ensure canvas is enabled
+        }
+
+        /**
+         * Resets both player scores to 0.
+         */
+        function resetScores() {
+            playerXScore = 0;
+            playerOScore = 0;
+            localStorage.setItem('ticTacToeXScore', 0);
+            localStorage.setItem('ticTacToeOScore', 0);
+            updateScoresDisplay();
+            showGameMessage("Scores Reset! Starting new game...", '');
+            startNewGame(); // Start a new game after resetting scores
+        }
+
+        /**
+         * Sets the game mode and updates UI.
+         * @param {string} mode - '2player' or 'vsAI'.
+         */
+        function setGameMode(mode) {
+            gameMode = mode;
+            twoPlayerModeBtn.classList.remove('active-mode');
+            vsAIModeBtn.classList.remove('active-mode');
+            if (mode === '2player') {
+                twoPlayerModeBtn.classList.add('active-mode');
+            } else {
+                vsAIModeBtn.classList.add('active-mode');
+            }
+            // Reset game when mode changes to ensure new game starts with correct settings
+            resetScores(); // This will call startNewGame
+        }
+
+        // --- Event Listeners and Initial Setup ---
+
+        window.onload = () => {
+            resizeCanvas(); // Set initial canvas size and drawing parameters
+            updateScoresDisplay(); // Load and display scores
+            setGameMode('2player'); // Set default mode to 2-player on load
+
+            // Initialize particles for background effect
+            for (let i = 0; i < maxParticles; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * (particleRadiusRange.max - particleRadiusRange.min) + particleRadiusRange.min,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+            // Start particle animation loop (independent of game loop)
+            requestAnimationFrame(function animateParticles() {
+                if (!gameActive && !gameOver) { // Only draw if game is idle or over (not actively drawing marks)
+                    drawGrid(); // Redraw grid
+                    drawParticles(); // Draw moving particles
+                    drawBoardMarks(); // Redraw marks
+                }
+                requestAnimationFrame(animateParticles);
+            });
+        };
+
+        window.addEventListener('resize', () => {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Stop any ongoing mark animation
+            resizeCanvas(); // Recalculate dimensions
+            drawGrid(); // Redraw grid
+            drawBoardMarks(); // Redraw current marks
+            // If game is over, keep message box visible
+            if (gameOver) {
+                showGameMessage(gameMessageBox.textContent, gameMessageBox.classList.contains('win') ? 'win' : (gameMessageBox.classList.contains('draw') ? 'draw' : ''));
+            } else {
+                hideGameMessage(); // Hide message if game is active
+            }
+        });
+
+        canvas.addEventListener('click', handleClick);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent scrolling on touch
+            handleClick(e);
+        }, { passive: false });
+
+        // Add hover effect for empty cells
+        canvas.addEventListener('mousemove', (event) => {
+            if (gameActive && !gameOver && !aiIsThinking && (gameMode !== 'vsAI' || (gameMode === 'vsAI' && currentPlayer === 'X'))) { // Only highlight for human player's turn
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (event.clientX - rect.left) * scaleX;
+                const y = (event.clientY - rect.top) * scaleY;
+
+                const col = Math.floor(x / cellSize);
+                const row = Math.floor(y / cellSize);
+                const index = row * cellCount + col;
+
+                // Only highlight if the cell is empty
+                if (board[index] === '') {
+                    drawGrid(); // Redraw grid
+                    drawParticles(); // Draw particles
+                    drawBoardMarks(); // Redraw existing marks
+                    // Draw highlight
+                    ctx.fillStyle = 'rgba(0, 123, 255, 0.1)'; /* Light blue transparent fill */
+                    ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                } else {
+                    drawGrid(); // Clear highlight if not on empty cell
+                    drawParticles();
+                    drawBoardMarks();
+                }
+            } else {
+                 // Clear highlight if not active/AI turn or if AI is thinking
+                 drawGrid();
+                 drawParticles();
+                 drawBoardMarks();
+            }
+        });
+        // Clear highlight when mouse leaves the canvas
+        canvas.addEventListener('mouseout', () => {
+            drawGrid();
+            drawParticles();
+            drawBoardMarks();
+        });
+
+
+        newGameBtn.addEventListener('click', startNewGame);
+        resetScoresBtn.addEventListener('click', resetScores);
+        twoPlayerModeBtn.addEventListener('click', () => setGameMode('2player'));
+        vsAIModeBtn.addEventListener('click', () => setGameMode('vsAI'));
+
+    </script>
+</body>
+</html>
